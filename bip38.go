@@ -3,7 +3,12 @@ package bitcoin
 import (
 	"code.google.com/p/go.crypto/scrypt"
 	"crypto/aes"
+	"crypto/rand"
+	"encoding/binary"
+	"errors"
 	"fmt"
+	"github.com/sour-is/koblitz/kelliptic"
+	"math/big"
 )
 
 type BIP38Key struct {
@@ -30,7 +35,7 @@ func BIP38LoadString(b58 string) (bip38 *BIP38Key, err error) {
 func (p PrivateKey) BIP38Encrypt(passphrase string) (bip *BIP38Key) {
 	bip = new(BIP38Key)
 
-	address := []byte(p.PublicKey().String())
+	address := p.PublicKey().Bytes()
 
 	ah := Dsha(address)[:4]
 	dh, _ := scrypt.Key([]byte(passphrase), ah, 16384, 8, 8, 64)
@@ -45,8 +50,6 @@ func (p PrivateKey) BIP38Encrypt(passphrase string) (bip *BIP38Key) {
 func (bip BIP38Key) BIP38Decrypt(passphrase string) (priv *PrivateKey, err error) {
 	dh, _ := scrypt.Key([]byte(passphrase), bip.Hash[:], 16384, 8, 8, 64)
 	priv = new(PrivateKey)
-
-	fmt.Printf("ah:%x - dh:%x\n", bip.Hash[:], dh)
 
 	p := decrypt(bip.Data[:], dh[:32], dh[32:])
 	copy(priv.Data[:], p)
@@ -99,4 +102,49 @@ func decrypt(src, dh1, dh2 []byte) (dst []byte) {
 	}
 
 	return
+}
+
+func NewIntermediateLot(p string, lot, seq int) (string, error) {
+	if lot < 0 || lot > 4096 {
+		return "", errors.New("BIP38: lot out of range")
+	}
+	if seq < 0 || seq > 1048575 {
+		return "", errors.New("BIP38: sequence out of range")
+	}
+
+	lotseq := make([]byte, 8)
+	n := binary.PutVarint(lotseq, int64(lot*4096+seq))
+
+	salt := make([]byte, 16)
+	rand.Read(salt[8:12])
+	copy(salt[12-n:16], lotseq[:4])
+
+	sc, _ := scrypt.Key([]byte(p), salt[8:16], 16384, 8, 8, 32)
+	copy(salt[:8], sc)
+
+	copy(in, []byte{0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2, 0x53})
+
+	return "", nil
+}
+
+func NewIntermediate(p string) (string, error) {
+	in := make([]byte, 49)
+	copy(in, []byte{0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2, 0x53})
+
+	rand.Read(in[8:16])
+
+	sc, _ := scrypt.Key([]byte(p), in[8:16], 16384, 8, 8, 32)
+
+	s256 := kelliptic.S256()
+	x, y := s256.ScalarBaseMult(sc)
+
+	by := new(big.Int).And(y, big.NewInt(1)).Int64()
+	if by == 1 {
+		in[16] = byte(3)
+	} else {
+		in[16] = byte(2)
+	}
+	copy(in[17:], x.Bytes())
+
+	return ToBase58(in, 72), nil
 }
