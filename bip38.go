@@ -6,8 +6,8 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/sour-is/koblitz/kelliptic"
-    "fmt"
 )
 
 type BIP38Key struct {
@@ -121,7 +121,7 @@ func NewIntermediateLot(p string, lot, seq int) (string, error) {
 	sc, _ := scrypt.Key([]byte(p), salt[8:16], 16384, 8, 8, 32)
 	copy(salt[:8], sc)
 
-//	copy(in, []byte{0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2, 0x53})
+	//	copy(in, []byte{0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2, 0x53})
 
 	return "", nil
 }
@@ -136,26 +136,28 @@ func NewIntermediate(p string) (string, error) {
 
 	s256 := kelliptic.S256()
 	x, y := s256.ScalarBaseMult(sc)
-    
-    fmt.Printf("Start X: %x Y: %x\n", x, y)
-    
-    cp := s256.CompressPoint(x, y)
+
+	fmt.Printf("Start X: %x Y: %x\n", x, y)
+
+	cp := s256.CompressPoint(x, y)
 	copy(in[16:], cp)
 
 	return ToBase58(in, 72), nil
 }
 
-
 func DecodeIntermediate(p string) error {
-    in, err := FromBase58(p)
-    if err != nil {
-        return err
-    }
-    
+	in, err := FromBase58(p)
+	if err != nil {
+		return err
+	}
+
 	s256 := kelliptic.S256()
-	x, y := s256.DecompressPoint(in[16:])
-    
-    fmt.Printf("End   X: %x Y: %x\n", x, y)   
-    
-    return nil
+	x, y, err := s256.DecompressPoint(in[16:])
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("End   X: %x Y: %x\n", x, y)
+
+	return nil
 }
