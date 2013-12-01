@@ -1,4 +1,4 @@
-package bitcoin
+package address
 
 import (
 	"code.google.com/p/go.crypto/scrypt"
@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/sour-is/bitcoin/op"
 	"github.com/sour-is/koblitz/kelliptic"
 )
 
@@ -36,7 +37,7 @@ func (p PrivateKey) BIP38Encrypt(passphrase string) (bip *BIP38Key) {
 
 	address := p.PublicKey().Bytes()
 
-	ah := Dsha(address)[:4]
+	ah := op.Hash256(address)[:4]
 	dh, _ := scrypt.Key([]byte(passphrase), ah, 16384, 8, 8, 64)
 
 	bip.Flag = byte(0xC0)

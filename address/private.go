@@ -1,4 +1,4 @@
-package bitcoin
+package address
 
 import (
 	"crypto/elliptic"

@@ -1,11 +1,11 @@
-package bitcoin
+package op
 
 import (
 	"code.google.com/p/go.crypto/ripemd160"
 	"crypto/sha256"
 )
 
-func Dsha(in []byte) []byte {
+func Hash256(in []byte) []byte {
 	s1 := sha256.New()
 	s2 := sha256.New()
 
@@ -15,7 +15,7 @@ func Dsha(in []byte) []byte {
 	return s2.Sum(nil)
 }
 
-func Rsha(in []byte) []byte {
+func Hash160(in []byte) []byte {
 	s := sha256.New()
 	r := ripemd160.New()
 

@@ -1,9 +1,10 @@
-package bitcoin
+package address
 
 import (
 	"crypto/elliptic"
 	"fmt"
 	"github.com/sour-is/koblitz/kelliptic"
+	"github.com/sour-is/bitcoin/op"    
 	"math/big"
 )
 
@@ -26,7 +27,7 @@ func (p *PublicKey) String() string {
 	b := elliptic.Marshal(s256, p.X, p.Y)
 	fmt.Printf("pub: %x\n", b)
 	hash := make([]byte, 21)
-	copy(hash[1:], Rsha(b))
+	copy(hash[1:], op.Hash160(b))
 
 	return ToBase58(hash, 34)
 }

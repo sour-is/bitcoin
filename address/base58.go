@@ -1,22 +1,23 @@
-package bitcoin
+package address
 
 import (
 	"bytes"
 	"errors"
 	"math/big"
+    "github.com/sour-is/bitcoin/op"
 )
 
 func ToBase58(b []byte, l int) string {
 	check := make([]byte, len(b)+4)
 	copy(check, b)
-	copy(check[len(b):], Dsha(b))
+	copy(check[len(b):], op.Hash256(b))
 	return ToBase58Raw(check, l)
 }
 
 func FromBase58(s string) ([]byte, error) {
 	b := FromBase58Raw(s)
 	l := len(b) - 4
-	if bytes.Compare(b[l:], Dsha(b[:l])[:4]) != 0 {
+	if bytes.Compare(b[l:], op.Hash256(b[:l])[:4]) != 0 {
 		return nil, errors.New("FromBase58: Invalid Checksum")
 	}
 	return b[:l], nil
