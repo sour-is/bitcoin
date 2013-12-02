@@ -3,6 +3,7 @@ package address
 import (
 	"crypto/elliptic"
 	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"github.com/sour-is/koblitz/kelliptic"
 	"io"
@@ -31,15 +32,25 @@ func NewPrivateKey(seed io.Reader) (priv *PrivateKey, pub *PublicKey) {
 }
 
 func ReadPrivateKey(s string) (priv *PrivateKey, pub *PublicKey, err error) {
-	b, err := FromBase58(s)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	pub = new(PublicKey)
 	priv = new(PrivateKey)
 
-	copy(priv.Data[:], b[1:])
+	if len(s) == 64 { // If 32 bytes assume it is hex encoded.
+		b, err := hex.DecodeString(s)
+		if err != nil {
+			return nil, nil, err
+		}
+		copy(priv.Data[:], b[:])
+	} else if len(s) == 51 && s[0] == '5' {
+		b, err := FromBase58(s)
+		if err != nil {
+			return nil, nil, err
+		}
+		copy(priv.Data[:], b[1:])
+	} else {
+		return nil, nil, errors.New("Invalid PrivateKey: Format not Recognized. (" + s + ")")
+	}
 
 	if priv.IsValid() {
 		return nil, nil, errors.New("Invalid PrivateKey: Out of Curve")
@@ -89,4 +100,12 @@ func (p *PrivateKey) String() string {
 	copy(addr[1:33], p.Data[:])
 
 	return ToBase58(addr, 51)
+}
+
+func (p *PrivateKey) Address() string {
+	return p.PublicKey().Address()
+}
+
+func (p *PrivateKey) AddressBytes() []byte {
+	return p.PublicKey().AddressBytes()
 }

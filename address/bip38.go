@@ -4,9 +4,9 @@ import (
 	"code.google.com/p/go.crypto/scrypt"
 	"crypto/aes"
 	"crypto/rand"
-	"encoding/binary"
-	"errors"
-	"fmt"
+	//	"encoding/binary"
+	//	"errors"
+	//	"fmt"
 	"github.com/sour-is/bitcoin/op"
 	"github.com/sour-is/koblitz/kelliptic"
 )
@@ -17,25 +17,10 @@ type BIP38Key struct {
 	Data [32]byte
 }
 
-func BIP38LoadString(b58 string) (bip38 *BIP38Key, err error) {
-	b, err := FromBase58(b58)
-	if err != nil {
-		return nil, err
-	}
-
-	bip38 = new(BIP38Key)
-
-	bip38.Flag = b[3]
-	copy(bip38.Hash[:], b[3:7])
-	copy(bip38.Data[:], b[7:])
-
-	return
-}
-
-func (p PrivateKey) BIP38Encrypt(passphrase string) (bip *BIP38Key) {
+func BIP38Encrypt(p *PrivateKey, passphrase string) (bip *BIP38Key) {
 	bip = new(BIP38Key)
 
-	address := p.PublicKey().Bytes()
+	address := p.AddressBytes()
 
 	ah := op.Hash256(address)[:4]
 	dh, _ := scrypt.Key([]byte(passphrase), ah, 16384, 8, 8, 64)
@@ -53,6 +38,21 @@ func (bip BIP38Key) BIP38Decrypt(passphrase string) (priv *PrivateKey, err error
 
 	p := decrypt(bip.Data[:], dh[:32], dh[32:])
 	copy(priv.Data[:], p)
+
+	return
+}
+
+func BIP38LoadString(b58 string) (bip38 *BIP38Key, err error) {
+	b, err := FromBase58(b58)
+	if err != nil {
+		return nil, err
+	}
+
+	bip38 = new(BIP38Key)
+
+	bip38.Flag = b[2]
+	copy(bip38.Hash[:], b[3:7])
+	copy(bip38.Data[:], b[7:])
 
 	return
 }
@@ -104,6 +104,26 @@ func decrypt(src, dh1, dh2 []byte) (dst []byte) {
 	return
 }
 
+// Intermediate Code Generation
+func NewIntermediate(p string) (string, error) {
+	in := make([]byte, 49)
+
+	copy(in, []byte{0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2, 0x53})
+
+	rand.Read(in[8:16])
+
+	sc, _ := scrypt.Key([]byte(p), in[8:16], 16384, 8, 8, 32)
+
+	s256 := kelliptic.S256()
+	x, y := s256.ScalarBaseMult(sc)
+
+	cp := s256.CompressPoint(x, y)
+	copy(in[16:], cp)
+
+	return ToBase58(in, 72), nil
+}
+
+/*
 func NewIntermediateLot(p string, lot, seq int) (string, error) {
 	if lot < 0 || lot > 4096 {
 		return "", errors.New("BIP38: lot out of range")
@@ -127,25 +147,6 @@ func NewIntermediateLot(p string, lot, seq int) (string, error) {
 	return "", nil
 }
 
-func NewIntermediate(p string) (string, error) {
-	in := make([]byte, 49)
-	copy(in, []byte{0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2, 0x53})
-
-	rand.Read(in[8:16])
-
-	sc, _ := scrypt.Key([]byte(p), in[8:16], 16384, 8, 8, 32)
-
-	s256 := kelliptic.S256()
-	x, y := s256.ScalarBaseMult(sc)
-
-	fmt.Printf("Start X: %x Y: %x\n", x, y)
-
-	cp := s256.CompressPoint(x, y)
-	copy(in[16:], cp)
-
-	return ToBase58(in, 72), nil
-}
-
 func DecodeIntermediate(p string) error {
 	in, err := FromBase58(p)
 	if err != nil {
@@ -162,3 +163,4 @@ func DecodeIntermediate(p string) error {
 
 	return nil
 }
+*/

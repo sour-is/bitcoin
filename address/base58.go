@@ -3,10 +3,11 @@ package address
 import (
 	"bytes"
 	"errors"
+	"github.com/sour-is/bitcoin/op"
 	"math/big"
-    "github.com/sour-is/bitcoin/op"
 )
 
+// Adds a checksum to bytes before converting to base58
 func ToBase58(b []byte, l int) string {
 	check := make([]byte, len(b)+4)
 	copy(check, b)
@@ -14,6 +15,7 @@ func ToBase58(b []byte, l int) string {
 	return ToBase58Raw(check, l)
 }
 
+// Validates checksum and strips it from result
 func FromBase58(s string) ([]byte, error) {
 	b := FromBase58Raw(s)
 	l := len(b) - 4
