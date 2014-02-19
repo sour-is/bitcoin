@@ -1,4 +1,4 @@
-package op
+package address
 
 import (
 	"code.google.com/p/go.crypto/ripemd160"

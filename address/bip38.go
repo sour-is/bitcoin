@@ -4,10 +4,6 @@ import (
 	"code.google.com/p/go.crypto/scrypt"
 	"crypto/aes"
 	"crypto/rand"
-	//	"encoding/binary"
-	//	"errors"
-	//	"fmt"
-	"github.com/sour-is/bitcoin/op"
 	"github.com/sour-is/koblitz/kelliptic"
 )
 
@@ -22,12 +18,12 @@ func BIP38Encrypt(p *PrivateKey, passphrase string) (bip *BIP38Key) {
 
 	address := p.AddressBytes()
 
-	ah := op.Hash256(address)[:4]
+	ah := Hash256(address)[:4]
 	dh, _ := scrypt.Key([]byte(passphrase), ah, 16384, 8, 8, 64)
 
 	bip.Flag = byte(0xC0)
 	copy(bip.Hash[:], ah)
-	copy(bip.Data[:], encrypt(p.Data[:], dh[:32], dh[32:]))
+	copy(bip.Data[:], encrypt(p.Bytes(), dh[:32], dh[32:]))
 
 	return
 }
@@ -37,7 +33,7 @@ func (bip BIP38Key) BIP38Decrypt(passphrase string) (priv *PrivateKey, err error
 	priv = new(PrivateKey)
 
 	p := decrypt(bip.Data[:], dh[:32], dh[32:])
-	copy(priv.Data[:], p)
+	copy(priv.Bytes(), p)
 
 	return
 }

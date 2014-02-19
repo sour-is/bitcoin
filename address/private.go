@@ -1,6 +1,7 @@
 package address
 
 import (
+	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/hex"
@@ -11,61 +12,62 @@ import (
 )
 
 type PrivateKey struct {
-	Data [32]byte
+    PublicKey
+	D *big.Int
 }
 
-func NewPrivateKey(seed io.Reader) (priv *PrivateKey, pub *PublicKey) {
+func NewPrivateKey(seed io.Reader) (p *PrivateKey, err error) {
 	if seed == nil {
 		seed = rand.Reader
 	}
 	s256 := kelliptic.S256()
 
-	pub = new(PublicKey)
-	priv = new(PrivateKey)
+	p = new(PrivateKey)
+    p.Curve = s256
 
-	d, x, y, _ := elliptic.GenerateKey(s256, seed)
-	copy(priv.Data[:], d[:])
-	pub.X = x
-	pub.Y = y
+	d, x, y, err := elliptic.GenerateKey(s256, seed)
+    
+	p.D = new(big.Int).SetBytes(d)
+	p.X = x
+	p.Y = y
 
 	return
 }
 
-func ReadPrivateKey(s string) (priv *PrivateKey, pub *PublicKey, err error) {
+func ReadPrivateKey(s string) (p *PrivateKey, err error) {
 
-	pub = new(PublicKey)
-	priv = new(PrivateKey)
+	p = new(PrivateKey)
 
 	if len(s) == 64 { // If 32 bytes assume it is hex encoded.
 		b, err := hex.DecodeString(s)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		copy(priv.Data[:], b[:])
+		p.D = new(big.Int).SetBytes(b)
 	} else if len(s) == 51 && s[0] == '5' {
 		b, err := FromBase58(s)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		copy(priv.Data[:], b[1:])
+		p.D = new(big.Int).SetBytes(b[1:])
 	} else {
-		return nil, nil, errors.New("Invalid PrivateKey: Format not Recognized. (" + s + ")")
+		return nil, errors.New("Invalid PrivateKey: Format not Recognized. (" + s + ")")
 	}
 
-	if priv.IsValid() {
-		return nil, nil, errors.New("Invalid PrivateKey: Out of Curve")
+	if p.IsValid() {
+		return nil, errors.New("Invalid PrivateKey: Out of Curve")
 	}
 
-	pub = priv.PublicKey()
+	p.PublicKey = p.GetPublicKey()
 
 	return
 }
 
-func (p *PrivateKey) PublicKey() (pub *PublicKey) {
+func (p *PrivateKey) GetPublicKey() (pub PublicKey) {
 	s256 := kelliptic.S256()
 
-	pub = new(PublicKey)
-	pub.X, pub.Y = s256.ScalarBaseMult(p.Data[:])
+    pub.Curve = s256
+	pub.X, pub.Y = s256.ScalarBaseMult(p.D.Bytes())
 
 	return
 }
@@ -73,13 +75,12 @@ func (p *PrivateKey) PublicKey() (pub *PublicKey) {
 func (p *PrivateKey) IsValid() bool {
 	max, _ := new(big.Int).SetString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
 	min := big.NewInt(1)
-	cmp := new(big.Int).SetBytes(p.Data[:])
 
-	if cmp.Cmp(min) > 0 {
+	if p.D.Cmp(min) > 0 {
 		return false
 	}
 
-	if cmp.Cmp(max) < 0 {
+	if p.D.Cmp(max) < 0 {
 		return false
 	}
 
@@ -87,25 +88,43 @@ func (p *PrivateKey) IsValid() bool {
 }
 
 func (p *PrivateKey) Bytes() []byte {
-	addr := make([]byte, 32)
-	copy(addr, p.Data[:])
-
-	return addr
+	return p.D.Bytes()
 }
 
 func (p *PrivateKey) String() string {
 	addr := make([]byte, 33)
 
 	addr[0] = 0x80
-	copy(addr[1:33], p.Data[:])
+	copy(addr[1:33], p.D.Bytes())
 
 	return ToBase58(addr, 51)
 }
 
 func (p *PrivateKey) Address() string {
-	return p.PublicKey().Address()
+	return p.PublicKey.Address()
 }
 
 func (p *PrivateKey) AddressBytes() []byte {
-	return p.PublicKey().AddressBytes()
+	return p.PublicKey.AddressBytes()
+}
+
+func (p *PrivateKey) Sign(m []byte) (s []byte, err error) {
+    K := new(ecdsa.PrivateKey) 
+    K.Curve = p.Curve
+    K.X = p.X
+    K.Y = p.Y
+    K.D = p.D
+    
+    R, S, err := ecdsa.Sign(rand.Reader, K, m)
+    
+    s = make([]byte, 65)
+    s[0] = 0x20
+    copy(s[1:], S.Bytes())
+    copy(s[33:], R.Bytes())
+    
+    
+    return 
+}
+func (p *PublicKey) Verify(m []byte, r, s *big.Int) bool {
+    return true
 }

@@ -2,18 +2,19 @@ package address
 
 import (
 	"crypto/elliptic"
-	"github.com/sour-is/bitcoin/op"
 	"github.com/sour-is/koblitz/kelliptic"
 	"math/big"
+    "encoding/hex"
 )
 
 type PublicKey struct {
+    *kelliptic.Curve
 	X *big.Int
 	Y *big.Int
 }
 
 func (p *PublicKey) String() string {
-	return p.Address()
+	return hex.EncodeToString(p.Bytes())
 }
 
 func (p *PublicKey) Bytes() []byte {
@@ -21,18 +22,29 @@ func (p *PublicKey) Bytes() []byte {
 		return []byte{}
 	}
 
-	s256 := kelliptic.S256()
-	return elliptic.Marshal(s256, p.X, p.Y)
+	return elliptic.Marshal(p.Curve, p.X, p.Y)
 }
 
 func (p *PublicKey) Address() string {
 	b := p.Bytes()
 
 	hash := make([]byte, 21)
-	copy(hash[1:], op.Hash160(b))
+	copy(hash[1:], Hash160(b))
 
 	return ToBase58(hash, 34)
 }
 func (p *PublicKey) AddressBytes() []byte {
 	return []byte(p.String())
+}
+
+func (p *PublicKey) Compress() string {
+
+	hash := make([]byte, 34)
+	copy(hash[1:], p.Curve.CompressPoint(p.X, p.Y))
+
+	return ToBase58(hash, 60)
+}
+
+func (p *PublicKey) CompressBytes() []byte {
+    return p.Curve.CompressPoint(p.X, p.Y)
 }
