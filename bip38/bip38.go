@@ -4,7 +4,6 @@ import (
 	"code.google.com/p/go.crypto/scrypt"
 	"crypto/aes"
 	"crypto/rand"
-	"fmt"
 	"github.com/sour-is/bitcoin/address"
 	"github.com/sour-is/koblitz/kelliptic"
 )
@@ -18,18 +17,12 @@ type BIP38Key struct {
 func Encrypt(p *address.PrivateKey, passphrase string) string {
 	bip38 := new(BIP38Key)
 
-	fmt.Printf("ADDR: %x %x\n", p.Address(), p.AddressBytes())
-
 	ah := address.Hash256(p.AddressBytes())[:4]
 	dh, _ := scrypt.Key([]byte(passphrase), ah, 16384, 8, 8, 64)
-
-	fmt.Printf("%x %x ", p.Bytes(), ah)
 
 	bip38.Flag = byte(0xC0)
 	copy(bip38.Hash[:], ah)
 	copy(bip38.Data[:], encrypt(p.Bytes(), dh[:32], dh[32:]))
-
-	fmt.Printf("%x\n", bip38.Data)
 
 	return bip38.String()
 }

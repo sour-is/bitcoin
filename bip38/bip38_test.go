@@ -1,7 +1,6 @@
 package bip38
 
 import (
-	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/sour-is/bitcoin/address"
 	"testing"
@@ -23,14 +22,6 @@ var bip38_tests = []bip38_test{
 		"5HtasZ6ofTHP6HCwTqTkLDuLQisYPah7aUnSKfC7h4hMUVw2gi5",
 		"6PRNFFkZc2NZ6dJqFfhRoFNMR9Lnyj7dYGrzdgXXVMXcxoKTePPX1dWByq",
 		"Satoshi"},
-	//	{"1FGAvMEfRzxqs8q5aLkUL3XRVApzWQneHw",
-	//		"5JJJpSZn6aTPLuoQbzYoayZqYJ2Lvx29rs7AaUeirjLvXoFE7NX",
-	//		"6PfVmVukmEMsz1HmgfqpJgapppXvqscx9NBYGhRv4tWQbvbSoyaisynW8u",
-	//		"hello"},
-	//	{"1JwSSubhmg6iPtRjtyqhUYYH7bZg3Lfy1T",
-	//		"5KJvsngHeMpm884wtkJNzQGaCErckhHJBGFsvd3VyK5qMZXj3hS",
-	//		"6PRKwcQ1g81NN5YMJka5EU8L3f1wZSPTZGHsjoszVqwJdihNCtqZiPggmu",
-	//		"hello"},
 }
 
 func TestBIP38Encryption(t *testing.T) {
@@ -50,8 +41,6 @@ func TestBIP38Encryption(t *testing.T) {
 
 	Convey(`Decrypt BIP38 Key`, t, func() {
 		for _, i := range bip38_tests {
-			b := address.FromBase58Raw(i.bip38)
-			fmt.Printf("%s, %x\n", i.address, b)
 			p, err := Decrypt(i.bip38, i.phrase)
 			if err != nil {
 				panic(err)
