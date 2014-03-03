@@ -2,13 +2,13 @@ package address
 
 import (
 	"crypto/elliptic"
+	"encoding/hex"
 	"github.com/sour-is/koblitz/kelliptic"
 	"math/big"
-    "encoding/hex"
 )
 
 type PublicKey struct {
-    *kelliptic.Curve
+	*kelliptic.Curve
 	X *big.Int
 	Y *big.Int
 }
@@ -33,8 +33,9 @@ func (p *PublicKey) Address() string {
 
 	return ToBase58(hash, 34)
 }
+
 func (p *PublicKey) AddressBytes() []byte {
-	return []byte(p.String())
+	return []byte(p.Address())
 }
 
 func (p *PublicKey) Compress() string {
@@ -46,5 +47,5 @@ func (p *PublicKey) Compress() string {
 }
 
 func (p *PublicKey) CompressBytes() []byte {
-    return p.Curve.CompressPoint(p.X, p.Y)
+	return p.Curve.CompressPoint(p.X, p.Y)
 }
