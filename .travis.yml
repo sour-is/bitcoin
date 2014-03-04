@@ -1,8 +1,7 @@
 language: go
 go:
 - 1.2
-- tip
 install:
-- go get -t github.com/smartystreets/goconvey
+- go get github.com/smartystreets/goconvey
 - go get code.google.com/p/go.crypto
 - go get github.com/sour-is/koblitz/kelliptic
