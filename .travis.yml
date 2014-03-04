@@ -2,7 +2,9 @@ language: go
 go:
 - 1.2
 install:
-- go get -d github.com/smartystreets/goconvey
-- go get -d code.google.com/p/go.crypto/scrypt
-- go get -d code.google.com/p/go.crypto/ripemd160
-- go get -d github.com/sour-is/koblitz/kelliptic
+- go get -d -v github.com/smartystreets/goconvey
+- go get -d -v github.com/jacobsa/ogletest
+- go get -d -v github.com/jacobsa/oglematchers
+- go get -d -v code.google.com/p/go.crypto/scrypt
+- go get -d -v code.google.com/p/go.crypto/ripemd160
+- go get -d -v github.com/sour-is/koblitz/kelliptic
