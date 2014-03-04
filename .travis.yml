@@ -3,5 +3,6 @@ go:
 - 1.2
 install:
 - go get github.com/smartystreets/goconvey
-- go get code.google.com/p/go.crypto
+- go get code.google.com/p/go.crypto/scrypt
+- go get code.google.com/p/go.crypto/ripemd160
 - go get github.com/sour-is/koblitz/kelliptic
