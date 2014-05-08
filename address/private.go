@@ -66,20 +66,19 @@ func ReadPrivateKey(s string) (p *PrivateKey, err error) {
 func (p *PrivateKey) SetBytes(b []byte) *PrivateKey {
 	p.Curve = kelliptic.S256()
 	p.D = new(big.Int).SetBytes(b)
-	p.X, p.Y = p.Curve.ScalarBaseMult(b)
+	p.X, p.Y = p.ScalarBaseMult(b)
 
 	return p
 }
 
 func (p *PrivateKey) IsValid() bool {
-	max, _ := new(big.Int).SetString("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
 	min := big.NewInt(1)
 
 	if min.Cmp(p.D) > 0 {
 		return false
 	}
 
-	if max.Cmp(p.D) < 0 {
+	if p.N.Cmp(p.D) < 0 { // The order n of G for the Curve
 		return false
 	}
 
@@ -101,10 +100,7 @@ func (p *PrivateKey) String() string {
 
 func (p *PrivateKey) Sign(m []byte) (s []byte, err error) {
 	K := new(ecdsa.PrivateKey)
-	K.Curve = p.Curve
-	K.X = p.X
-	K.Y = p.Y
-	K.D = p.D
+	K.Curve, K.X, K.Y, K.D = p.Curve, p.X, p.Y, p.D
 
 	R, S, err := ecdsa.Sign(rand.Reader, K, m)
 
@@ -115,6 +111,13 @@ func (p *PrivateKey) Sign(m []byte) (s []byte, err error) {
 
 	return
 }
-func (p *PublicKey) Verify(m []byte, r, s *big.Int) bool {
-	return true
+
+func (p *PublicKey) Verify(m, s []byte) bool {
+    P := new(ecdsa.PublicKey)
+    P.Curve, P.X, P.Y = p.Curve, p.X, p.Y
+    
+    R := new(big.Int).SetBytes(s[33:])
+    S := new(big.Int).SetBytes(s[1:33])
+    
+	return ecdsa.Verify(P, m, R, S)
 }

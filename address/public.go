@@ -9,8 +9,7 @@ import (
 
 type PublicKey struct {
 	*kelliptic.Curve
-	X *big.Int
-	Y *big.Int
+	X, Y *big.Int
 }
 
 func (p *PublicKey) String() string {
@@ -49,3 +48,4 @@ func (p *PublicKey) Compress() string {
 func (p *PublicKey) CompressBytes() []byte {
 	return p.Curve.CompressPoint(p.X, p.Y)
 }
+

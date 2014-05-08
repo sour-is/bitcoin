@@ -28,3 +28,17 @@ func TestReadPrivateKey(t *testing.T) {
 		So(priv.Address(), ShouldResemble, PK_address)
 	})
 }
+
+func TestECDSA(t *testing.T) {
+	PK_private := "5KJvsngHeMpm884wtkJNzQGaCErckhHJBGFsvd3VyK5qMZXj3hS"
+	priv, _ := ReadPrivateKey(PK_private)
+    Convey(`Sign and Verify Hash`, t, func(){
+        s, err := priv.Sign([]byte("Hello"))
+        if err != nil {
+            panic(err)
+        }
+        
+        b := priv.Verify([]byte("Hello"), s)
+        So(b, ShouldBeTrue)
+    })
+}
