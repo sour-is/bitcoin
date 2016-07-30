@@ -1,7 +1,7 @@
 package address
 
 import (
-	"code.google.com/p/go.crypto/ripemd160"
+	"golang.org/x/crypto/ripemd160"
 	"crypto/sha256"
 )
 

@@ -1,7 +1,7 @@
 package bip38
 
 import (
-	"code.google.com/p/go.crypto/scrypt"
+	"golang.org/x/crypto/scrypt"
 	"crypto/aes"
 	"crypto/rand"
 	"github.com/sour-is/bitcoin/address"
